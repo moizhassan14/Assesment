@@ -1,0 +1,9 @@
+node_modules
+.npm-cache
+.qa-data
+dist
+.angular
+test-results
+playwright-report
+e2e
+*.log

@@ -1,0 +1,72 @@
+@if (store.loading() || (!store.run() && store.error())) {
+<app-state
+  [loading]="store.loading()"
+  [error]="store.error()"
+  title="analysis"
+  (retry)="store.refresh()"
+/>
+} @else if (store.run(); as run) {
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/">Brand overview</a><app-icon name="chevron" /><a
+    [routerLink]="['/brands', run.brand_id]"
+    >{{ run.brand_snapshot.name }}</a
+  ><app-icon name="chevron" /><span>Analysis</span>
+</nav>
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">FROM EVIDENCE TO ACTION</span>
+    <h1>{{ run.brand_snapshot.name }} / Visibility report</h1>
+    <p>
+      {{ run.created_at | date: "MMMM d, y, h:mm a" }}
+      <span aria-hidden="true">·</span>
+      {{ run.brand_snapshot.market.location_name }}
+      <span aria-hidden="true">·</span>
+      {{ run.mode === "discover" ? "Discovery analysis" : "Tracked-query
+      re-check" }}
+    </p>
+  </div>
+  <div class="heading-actions">
+    <app-status [status]="run.status" />
+    @if (store.report()?.opportunities?.length) {
+    <a class="button secondary" [href]="api.exportUrl(run.id)" download
+      ><app-icon name="download" /> Export CSV</a
+    >
+    }
+  </div>
+</div>
+@if (store.error()) {
+<div class="notice warning" role="alert">
+  <app-icon name="alert" />
+  <div>
+    <strong>Live updates are paused.</strong>
+    <p>
+      The server may still be working. Your last received state is shown below.
+    </p>
+    <button class="button text" (click)="store.refresh()">
+      Reconnect <app-icon name="refresh" />
+    </button>
+  </div>
+</div>
+}
+<nav class="tabs" aria-label="Analysis sections">
+  <a [routerLink]="['/runs', run.id, 'progress']" routerLinkActive="active"
+    ><app-icon name="signal" /> Pipeline</a
+  ><a [routerLink]="['/runs', run.id, 'overview']" routerLinkActive="active"
+    ><app-icon name="grid" /> Visibility overview</a
+  ><a
+    [routerLink]="['/runs', run.id, 'opportunities']"
+    routerLinkActive="active"
+    ><app-icon name="target" /> Opportunities @if (store.report(); as report) {
+    <span class="count-chip">{{ report.opportunities.length }}</span>
+    }</a
+  ><a
+    [routerLink]="['/runs', run.id, 'recommendations']"
+    routerLinkActive="active"
+    ><app-icon name="file" /> Content actions</a
+  >
+</nav>
+<router-outlet />
+<p class="support-reference" style="margin-top: 30px">
+  Run {{ run.id }} · Trace {{ run.correlation_id }}
+</p>
+}

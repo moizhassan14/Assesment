@@ -1,0 +1,42 @@
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Local data (SQLite databases, run artefacts)
+backend/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Node / Angular
+node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Assessment brief (provided by the hiring team, not part of the deliverable)
+assessment.docx

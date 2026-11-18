@@ -1,0 +1,154 @@
+@if (store.run(); as run) {
+<section class="progress-hero" aria-labelledby="progress-heading">
+  <div class="progress-top">
+    <span class="eyebrow"
+      >{{ active(run.status) ? "LIVE ANALYSIS" : "ANALYSIS FINISHED" }}</span
+    ><span class="progress-value"
+      >{{ run.progress.percent | number: "1.0-0" }}<small>%</small></span
+    >
+  </div>
+  <h2 id="progress-heading">
+    {{ run.status === "failed" ? "This analysis couldn’t finish." :
+    active(run.status) ? "Following the signals. Finding your gaps." :
+    run.status === "partial_success" ? "Your report is ready, with some gaps in
+    the evidence." : "Your next content move is ready." }}
+  </h2>
+  <p aria-live="polite">{{ run.progress.message }}</p>
+  <div
+    class="progress-track"
+    role="progressbar"
+    aria-label="Analysis progress"
+    [attr.aria-valuenow]="run.progress.percent"
+    aria-valuemin="0"
+    aria-valuemax="100"
+  >
+    <i [style.width.%]="run.progress.percent"></i>
+  </div>
+  <div class="progress-bottom">
+    <span
+      >{{ run.progress.completed_nodes ?? "—" }} / {{ run.progress.total_nodes
+      ?? "—" }} active-path stages complete</span
+    ><span
+      >Started {{ run.started_at ? (run.started_at | date: "h:mm:ss a") :
+      "Waiting for worker" }}</span
+    >
+  </div>
+</section>
+<app-coverage-notice [report]="store.report()" />
+@if (!active(run.status)) {
+<div class="notice" [class.danger]="run.status === 'failed'">
+  <app-icon [name]="run.status === 'failed' ? 'alert' : 'check'" />
+  <div>
+    <strong
+      >{{ run.status === "failed" ? "Review the incomplete stages below." :
+      "Your saved report is ready to explore." }}</strong
+    >
+    <p>
+      {{ run.status === "failed" ? "Any usable evidence is preserved. Start a
+      new analysis from your brand when ready." : "Explore your visibility,
+      inspect the ranked opportunities, and choose a content action." }}
+    </p>
+  </div>
+  <a class="button secondary" [routerLink]="['/runs', run.id, 'overview']"
+    >Open report <app-icon name="arrow"
+  /></a>
+</div>
+}
+<div class="two-column">
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>The research pipeline</h2>
+        <p>Real server stages. No simulated progress.</p>
+      </div>
+      <app-icon name="signal" />
+    </div>
+    <ol class="pipeline">
+      @for (node of run.nodes; track node.name; let i = $index) {
+      <li>
+        <div class="node-marker" [attr.data-status]="node.status">
+          @if (node.status === "success") {
+          <app-icon name="check" />
+          } @else if ( node.status === "failed" || node.status === "degraded" )
+          {
+          <app-icon name="alert" />
+          } @else if (node.status === "running") {
+          <app-icon name="refresh" />
+          } @else { {{ i + 1 }} }
+        </div>
+        <div class="node-content">
+          <h3>{{ node.label }}</h3>
+          <p>
+            {{ node.error ? describe(node.error) : node.message || (node.status
+            === "skipped" ? "Not needed for this research path." : "Waiting for
+            upstream evidence.") }}
+          </p>
+        </div>
+        <div class="node-meta">
+          <app-status [status]="node.status" />
+          @if (node.duration_ms !== null) {
+          <span>{{ node.duration_ms / 1000 | number: "1.0-1" }}s</span>
+          } @if (node.retry_count) {
+          <span>{{ node.retry_count }} retries</span>
+          }
+        </div>
+      </li>
+      } @empty {
+      <li>
+        <p class="section-copy">
+          Waiting for the worker to initialize the pipeline.
+        </p>
+      </li>
+      }
+    </ol>
+    <p class="pipeline-caption">
+      Planning → keyword research → search & AI retrieval → normalization →
+      analysis → report. Branches run independently where supported.
+    </p>
+  </section>
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Research question</h2>
+        <app-icon name="search" />
+      </div>
+      <div class="panel-body">
+        <p class="section-copy">{{ run.question }}</p>
+        <hr class="divider" />
+        <dl class="data-list">
+          <div>
+            <dt>Provider calls</dt>
+            <dd>{{ run.cost.provider_calls | metric }}</dd>
+          </div>
+          <div>
+            <dt>Cache hits</dt>
+            <dd>{{ run.cost.provider_cache_hits | metric }}</dd>
+          </div>
+          <div>
+            <dt>AI synthesis calls</dt>
+            <dd>{{ run.cost.llm_calls | metric }}</dd>
+          </div>
+          <div>
+            <dt>Recorded provider cost</dt>
+            <dd>{{ run.cost.provider_cost_usd | number: "1.2-4" }} USD</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-body">
+        <app-icon name="info" style="color: var(--teal); margin-bottom: 12px" />
+        <h3 style="margin-bottom: 8px">You can step away.</h3>
+        <p class="section-copy">
+          Research continues on the server. Return to this run from your brand’s
+          history at any time. Failed sources never erase evidence from
+          successful stages.
+        </p>
+        <a class="button text" [routerLink]="['/brands', run.brand_id]"
+          >Back to brand <app-icon name="arrow"
+        /></a>
+      </div>
+    </section>
+  </div>
+</div>
+}

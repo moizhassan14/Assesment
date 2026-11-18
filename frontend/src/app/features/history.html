@@ -1,0 +1,267 @@
+<div class="section-heading" style="margin-top: 0">
+  <div>
+    <h2>Progress is a series of snapshots.</h2>
+    <p class="section-copy" style="margin-top: 5px">
+      Revisit earlier evidence and see what changed between analyses.
+    </p>
+  </div>
+  <a class="button primary" [routerLink]="['/brands', brandId]"
+    ><app-icon name="refresh" /> Run a new analysis</a
+  >
+</div>
+<section class="panel">
+  <div class="panel-header">
+    <h2>Saved analyses <span class="count-chip">{{ total() }}</span></h2>
+    <button
+      class="icon-button"
+      aria-label="Refresh history"
+      (click)="loadPage()"
+      [disabled]="loading()"
+    >
+      <app-icon name="refresh" />
+    </button>
+  </div>
+  @if (loading() || error()) {
+  <div class="panel-body">
+    <app-state
+      [loading]="loading()"
+      [error]="error()"
+      title="analysis history"
+      (retry)="loadPage()"
+    />
+  </div>
+  } @else if (!runs().length) {
+  <app-state
+    title="Your story starts with one analysis"
+    description="Run your first analysis from the brand overview. Every completed report will be saved here."
+    icon="clock"
+  />
+  } @else {
+  <div
+    class="table-scroll"
+    tabindex="0"
+    role="region"
+    aria-label="Saved analyses table. Scroll horizontally for more columns."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Analysis</th>
+          <th>Status</th>
+          <th>AI visibility</th>
+          <th>Organic top 10</th>
+          <th>Queries</th>
+          <th><span class="sr-only">Open report</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (run of runs(); track run.id) {
+        <tr>
+          <td>
+            <strong>{{ run.created_at | date: "MMM d, y" }}</strong>
+            <div class="small-note">
+              {{ run.created_at | date: "h:mm a" }} · {{ run.mode | label }}
+            </div>
+            <div class="small-note mono">{{ run.id.slice(0, 8) }}</div>
+          </td>
+          <td><app-status [status]="run.status" /></td>
+          <td class="table-number">
+            {{ run.headline?.ai_visibility_rate | metric: "percent" }}
+          </td>
+          <td class="table-number">
+            {{ run.headline?.organic_top10_rate | metric: "percent" }}
+          </td>
+          <td>{{ run.headline?.queries_measured | metric }}</td>
+          <td>
+            <a
+              class="button secondary small"
+              [routerLink]="[
+                        '/runs',
+                        run.id,
+                        active(run.status) ? 'progress' : 'overview',
+                      ]"
+              >{{ active(run.status) ? "View progress" : "Open report"
+              }}<app-icon name="arrow"
+            /></a>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <span
+      >{{ offset() + 1 }}–{{ offset() + runs().length }} of {{ total() }}
+      analyses</span
+    >
+    <div>
+      <button
+        class="button secondary small"
+        [disabled]="offset() === 0"
+        (click)="page(-1)"
+      >
+        Previous</button
+      ><button
+        class="button secondary small"
+        [disabled]="offset() + runs().length >= total()"
+        (click)="page(1)"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+  }
+</section>
+<div class="section-heading">
+  <h2>See what moved</h2>
+  <span class="small-note">Lower opportunity scores mean a smaller gap</span>
+</div>
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Analysis comparison</h2>
+      <p>
+        By default, your latest two completed reports. Select runs on this
+        history page to compare others.
+      </p>
+    </div>
+  </div>
+  <div class="panel-body">
+    @if (completed().length >= 2) {
+    <form class="form-grid" [formGroup]="form" (ngSubmit)="compareSelected()">
+      <div class="field">
+        <label for="base-run">Earlier analysis</label
+        ><select id="base-run" formControlName="base">
+          @for (run of completed(); track run.id) {
+          <option [value]="run.id">
+            {{ run.created_at | date: "MMM d, y, h:mm a" }} · {{ run.id.slice(0,
+            8) }} · {{ run.mode | label }}
+          </option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="target-run">Later analysis</label>
+        <div class="inline-input">
+          <select id="target-run" formControlName="target">
+            @for (run of completed(); track run.id) {
+            <option [value]="run.id">
+              {{ run.created_at | date: "MMM d, y, h:mm a" }} · {{
+              run.id.slice(0, 8) }} · {{ run.mode | label }}
+            </option>
+            }</select
+          ><button
+            class="button secondary"
+            type="submit"
+            [disabled]="
+                    compareLoading() ||
+                    form.controls.base.value === form.controls.target.value
+                  "
+          >
+            Compare
+          </button>
+        </div>
+      </div>
+    </form>
+    } @if (selectionError()) {
+    <p class="section-copy" role="alert">{{ selectionError() }}</p>
+    } @if (compareLoading() || compareError()) {
+    <app-state
+      [loading]="compareLoading()"
+      [error]="compareError()"
+      title="comparison"
+      (retry)="loadComparison()"
+    />
+    } @else if (comparison(); as comparison) {
+    <p class="small-note">
+      {{ comparison.base_run.created_at | date: "MMM d, y, h:mm a" }} → {{
+      comparison.target_run.created_at | date: "MMM d, y, h:mm a" }} · Only
+      shared measured evidence is comparable.
+    </p>
+    <div class="comparison-grid">
+      <div class="comparison-stat">
+        <small>AI VISIBILITY CHANGE</small
+        ><strong
+          [class.positive]="
+                  (comparison.summary.ai_visibility_rate_delta ?? 0) > 0
+                "
+          [class.negative]="
+                  (comparison.summary.ai_visibility_rate_delta ?? 0) < 0
+                "
+          >{{ comparison.summary.ai_visibility_rate_delta | metric: "delta"
+          }}</strong
+        ><small>Percentage points</small>
+      </div>
+      <div class="comparison-stat">
+        <small>ORGANIC TOP-10 CHANGE</small
+        ><strong
+          [class.positive]="
+                  (comparison.summary.organic_top10_rate_delta ?? 0) > 0
+                "
+          [class.negative]="
+                  (comparison.summary.organic_top10_rate_delta ?? 0) < 0
+                "
+          >{{ comparison.summary.organic_top10_rate_delta | metric: "delta"
+          }}</strong
+        ><small>Percentage points</small>
+      </div>
+      <div class="comparison-stat">
+        <small>QUERIES IMPROVED</small
+        ><strong class="positive">{{ comparison.summary.improved }}</strong
+        ><small
+          >{{ comparison.summary.declined }} declined · {{
+          comparison.summary.unchanged }} unchanged</small
+        >
+      </div>
+    </div>
+    <div
+      class="table-scroll"
+      tabindex="0"
+      role="region"
+      aria-label="Query comparison table. Scroll horizontally for more columns."
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Query</th>
+            <th>Movement</th>
+            <th>Gap score</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (query of comparison.queries; track query.query) {
+          <tr>
+            <td>{{ query.query }}</td>
+            <td><app-status [status]="query.status" /></td>
+            <td class="nowrap">
+              {{ query.base?.score | metric: "score" }} → {{ query.target?.score
+              | metric: "score" }}
+            </td>
+            <td>{{ query.notes.join(" · ") || "No additional notes." }}</td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="4">
+              There are no shared query observations to compare.
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="small-note" style="margin-top: 15px">
+      {{ comparison.summary.new }} new queries · {{ comparison.summary.dropped
+      }} dropped · {{ comparison.summary.not_comparable }} not comparable.
+      Different query sets can change aggregate rates; read the query-level
+      movement before drawing conclusions.
+    </p>
+    } @else {
+    <app-state
+      title="One report is a baseline. Two show a direction."
+      description="Complete two analyses with usable evidence to compare them. Re-checking tracked queries makes the clearest comparison."
+      icon="chart"
+    />
+    }
+  </div>
+</section>

@@ -1,0 +1,9 @@
+# OPT-IN sandbox overlay — synthetic DataForSEO-shaped data, clearly labelled as such in the API and UI.
+#   docker compose -f compose.yaml -f compose.sandbox.yaml up --build
+# Use only when the live DataForSEO account cannot be used (e.g. unverified account → 40104).
+# The LLM is still real (subject to OPENAI_MAX_CALLS_* quotas); history stays in the same volume,
+# and sandbox runs are never compared with or re-measured from live runs.
+services:
+  backend:
+    environment:
+      DATAFORSEO_MODE: sandbox

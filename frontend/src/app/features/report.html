@@ -1,0 +1,335 @@
+@if ((store.reportLoading() && !store.report()) || store.reportError()) {
+<app-state
+  [loading]="store.reportLoading()"
+  [error]="store.reportError()"
+  title="visibility report"
+  (retry)="store.refreshReport()"
+/>
+} @else if (store.report(); as report) {
+<app-coverage-notice [report]="report" />
+@if (!report.visibility) {
+<app-state
+  [title]="
+            report.is_final
+              ? 'No usable visibility evidence'
+              : 'Your evidence is on its way'
+          "
+  [description]="
+            report.is_final
+              ? 'This run did not obtain usable measurements. Review pipeline failures, then start another analysis from your brand.'
+              : 'The pipeline is still collecting and normalizing live measurements. Follow progress to see which stage is running.'
+          "
+  icon="search"
+  ><a
+    class="button secondary"
+    [routerLink]="['/runs', report.run.id, 'progress']"
+    >View pipeline <app-icon name="arrow" /></a
+></app-state>
+} @else {
+<div class="metric-grid">
+  <app-metric
+    label="AI visibility"
+    [value]="
+              report.run.headline?.ai_visibility_rate | metric: 'percent'
+            "
+    [hint]="
+              report.visibility.chatgpt.measured + ' ChatGPT queries measured'
+            "
+    icon="spark"
+  /><app-metric
+    label="Organic top 10"
+    [value]="
+              report.run.headline?.organic_top10_rate | metric: 'percent'
+            "
+    [hint]="
+              report.visibility.google_organic.measured +
+              ' Google queries measured'
+            "
+    icon="search"
+  /><app-metric
+    label="AI citations"
+    [value]="
+              report.visibility.chatgpt.measured
+                ? (report.visibility.chatgpt.brand_cited | metric)
+                : '—'
+            "
+    hint="ChatGPT answers citing your domain"
+    icon="globe"
+  /><app-metric
+    label="Content opportunities"
+    [value]="report.opportunities.length | metric"
+    [hint]="partialCount() + ' with incomplete evidence'"
+    icon="target"
+  />
+</div>
+@if (report.summary) {
+<section class="insight-banner">
+  <div>
+    <span class="eyebrow">THE TAKEAWAY</span>
+    <h2>{{ report.summary.headline }}</h2>
+    <p>A summary assembled from this run’s measured evidence.</p>
+  </div>
+  <div class="insight-symbol"><app-icon name="spark" /></div>
+</section>
+}
+<div class="two-column">
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>What the evidence tells us</h2>
+        <p>The findings worth bringing to your next content meeting.</p>
+      </div>
+      <app-icon name="file" />
+    </div>
+    <div class="panel-body">
+      <ul class="finding-list">
+        @for ( finding of report.summary?.key_findings ?? []; track $index ) {
+        <li><app-icon name="check" /><span>{{ finding }}</span></li>
+        } @empty {
+        <li>
+          No narrative findings are available. Inspect the measured surfaces and
+          evidence below.
+        </li>
+        }
+      </ul>
+      <a
+        class="button text"
+        [routerLink]="['/runs', report.run.id, 'opportunities']"
+        >Explore the opportunities <app-icon name="arrow"
+      /></a>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>In the AI conversation</h2>
+        <p>Recorded AI mentions · relative comparison</p>
+      </div>
+      <app-icon name="users" />
+    </div>
+    <div class="panel-body">
+      <div class="bar-chart">
+        @for ( voice of report.visibility.share_of_voice; track voice.domain ) {
+        <div>
+          <div class="bar-row-head">
+            <span
+              >{{ voice.name }} @if (voice.is_brand) {
+              <span class="count-chip">YOU</span>
+              }</span
+            ><strong
+              >{{ aiHasEvidence() ? (voice.ai_mentions | metric) : "—"
+              }}</strong
+            >
+          </div>
+          <div class="bar-track" aria-hidden="true">
+            <i
+              [class.is-brand]="voice.is_brand"
+              [style.width.%]="
+                          aiHasEvidence() && maxMentions()
+                            ? (voice.ai_mentions / maxMentions()) * 100
+                            : 0
+                        "
+            ></i>
+          </div>
+        </div>
+        } @empty {
+        <p class="section-copy">
+          Competitor measurements are unavailable for this run.
+        </p>
+        }
+      </div>
+      <div class="chart-key">
+        <span><i class="is-brand"></i>Your brand</span
+        ><span><i></i>Competitors</span>
+      </div>
+      @if (!aiHasEvidence()) {
+      <p class="small-note">
+        AI evidence unavailable. Mention counts are unknown.
+      </p>
+      }
+    </div>
+  </section>
+</div>
+<div class="section-heading">
+  <h2>Visibility, surface by surface</h2>
+  <span class="small-note">Only measured evidence contributes to rates</span>
+</div>
+<section class="panel">
+  <div
+    class="table-scroll"
+    tabindex="0"
+    role="region"
+    aria-label="Visibility by surface table. Scroll horizontally for more columns."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Surface</th>
+          <th>Measured</th>
+          <th>Your visibility</th>
+          <th>Coverage note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>ChatGPT</strong></td>
+          <td>{{ report.visibility.chatgpt.measured }}</td>
+          <td>
+            {{ report.visibility.chatgpt.measured ?
+            (report.visibility.chatgpt.brand_mentioned | metric) : "—" }}
+            mentions · {{ report.visibility.chatgpt.measured ?
+            (report.visibility.chatgpt.brand_cited | metric) : "—" }} citations
+          </td>
+          <td>{{ report.visibility.chatgpt.failed }} failed measurements</td>
+        </tr>
+        <tr>
+          <td><strong>Google organic</strong></td>
+          <td>{{ report.visibility.google_organic.measured }}</td>
+          <td>
+            {{ report.visibility.google_organic.measured ?
+            (report.visibility.google_organic.brand_top10 | metric) : "—" }}
+            top-10 placements · Best rank {{
+            report.visibility.google_organic.best_rank | metric }}
+          </td>
+          <td>
+            {{ report.visibility.google_organic.failed }} failed measurements
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Google AI Overview</strong></td>
+          <td>{{ report.visibility.google_ai_overview.measured }}</td>
+          <td>
+            {{ report.visibility.google_ai_overview.present ?
+            (report.visibility.google_ai_overview.brand_cited | metric) : "—" }}
+            citations
+          </td>
+          <td>
+            {{ report.visibility.google_ai_overview.present }} AI Overviews
+            shown · Absence is not failed retrieval
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<div class="two-column" style="margin-top: 24px">
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Where to act next</h2>
+        <p>Concrete briefs, grounded in your visibility gaps.</p>
+      </div>
+      <app-icon name="target" />
+    </div>
+    <div class="panel-body">
+      <dl class="data-list">
+        <div>
+          <dt>High priority recommendations</dt>
+          <dd>{{ priorityCount("high") }}</dd>
+        </div>
+        <div>
+          <dt>Medium priority recommendations</dt>
+          <dd>{{ priorityCount("medium") }}</dd>
+        </div>
+        <div>
+          <dt>Low priority recommendations</dt>
+          <dd>{{ priorityCount("low") }}</dd>
+        </div>
+      </dl>
+      <a
+        class="button text"
+        [routerLink]="['/runs', report.run.id, 'recommendations']"
+        >Choose a content action <app-icon name="arrow"
+      /></a>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Evidence & freshness</h2>
+      <app-icon name="clock" />
+    </div>
+    <div class="panel-body">
+      <dl class="data-list">
+        <div>
+          <dt>Selected research queries</dt>
+          <dd>{{ selectedCount() }}</dd>
+        </div>
+        <div>
+          <dt>Queries measured</dt>
+          <dd>{{ report.visibility.queries_measured }}</dd>
+        </div>
+        <div>
+          <dt>Most recent source retrieval</dt>
+          <dd>
+            {{ freshest() ? (freshest() | date: "MMM d, h:mm a") : "Unavailable"
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Report generated</dt>
+          <dd>
+            {{ report.generated_at ? (report.generated_at | date: "MMM d, h:mm
+            a") : "In progress" }}
+          </dd>
+        </div>
+        <div>
+          <dt>Scoring model</dt>
+          <dd>{{ report.scoring.version }}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+</div>
+<div class="section-heading">
+  <h2>
+    Measurement evidence
+    <span class="count-chip">{{ report.observations.length }}</span>
+  </h2>
+</div>
+<section class="panel">
+  <div
+    class="table-scroll"
+    tabindex="0"
+    role="region"
+    aria-label="Measurement evidence table. Scroll horizontally for more columns."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Surface</th>
+          <th>Measurement</th>
+          <th>Your brand</th>
+          <th>Retrieved</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for ( observation of report.observations; track observation.id ) {
+        <tr>
+          <td style="min-width: 220px; max-width: 380px">
+            {{ observation.query }}
+          </td>
+          <td>{{ observation.surface | label }}</td>
+          <td><app-status [status]="observation.status" /></td>
+          <td>{{ presence(observation) }}</td>
+          <td class="nowrap">
+            {{ observation.fetched_at | date: "MMM d, h:mm a" }} @if
+            (observation.cached) {
+            <div class="small-note">Cached provider result</div>
+            }
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="5">No observations have been saved.</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<p class="small-note" style="margin-top: 17px">
+  AI answers vary between sessions. This report describes the sampled queries
+  and recorded retrieval times, not the entire market.
+</p>
+} }

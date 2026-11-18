@@ -1,0 +1,243 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">THE BIG PICTURE</span>
+    <h1>Your brand, in the conversation.</h1>
+    <p>See where you show up. Find where you could.</p>
+  </div>
+  <a class="button primary" routerLink="/brands/new"
+    ><app-icon name="plus" /> Add a brand</a
+  >
+</div>
+@if (!loading() && !error()) {
+<div class="metric-grid">
+  <app-metric
+    label="Tracked brands"
+    [value]="total() | metric"
+    hint="Across your workspace"
+    icon="globe"
+  />
+  <app-metric
+    label="Brands with evidence"
+    [value]="analyzed() | metric"
+    hint="On this page · latest analyses"
+    icon="signal"
+  />
+  <app-metric
+    label="Measured queries"
+    [value]="queryCount() | metric"
+    hint="On this page · latest analyses"
+    icon="search"
+  />
+  <app-metric
+    label="Content opportunities"
+    [value]="opportunityCount() | metric"
+    [hint]="
+            reportsMissing()
+              ? 'Some latest reports are unavailable'
+              : 'On this page · available latest reports'
+          "
+    icon="spark"
+  />
+</div>
+}
+<section class="panel" aria-labelledby="brands-heading">
+  <div class="panel-header">
+    <div>
+      <h2 id="brands-heading">
+        Brand portfolio <span class="count-chip">{{ total() }}</span>
+      </h2>
+      <p>Your latest measurements, all in one place.</p>
+    </div>
+    <button
+      class="icon-button"
+      aria-label="Refresh brands"
+      [disabled]="loading()"
+      (click)="refresh()"
+    >
+      <app-icon name="refresh" />
+    </button>
+  </div>
+  <div class="toolbar">
+    <div class="search-input">
+      <app-icon name="search" /><input
+        type="search"
+        aria-label="Search brands"
+        placeholder="Search by brand or domain…"
+        [value]="query()"
+        (input)="search($event)"
+      />
+    </div>
+    <span class="small-note">ChatGPT · Google organic · AI Overview</span>
+  </div>
+  @if (loading() || error()) {
+  <div class="panel-body">
+    <app-state
+      [loading]="loading()"
+      [error]="error()"
+      title="your brands"
+      (retry)="refresh()"
+    />
+  </div>
+  } @else if (!rows().length) {
+  <app-state
+    [title]="
+            query()
+              ? 'No brands match your search'
+              : 'Your next insight starts here'
+          "
+    [description]="
+            query()
+              ? 'Try another brand name or domain.'
+              : 'Add your brand and competitors. We’ll help you understand how people discover you in AI answers and search.'
+          "
+    icon="globe"
+  >
+    @if (!query()) {
+    <a class="button primary" routerLink="/brands/new"
+      ><app-icon name="plus" /> Add your first brand</a
+    >
+    }
+  </app-state>
+  } @else {
+  <div
+    class="table-scroll"
+    tabindex="0"
+    role="region"
+    aria-label="Brand portfolio table. Scroll horizontally for more columns."
+  >
+    <table>
+      <thead>
+        <tr>
+          <th>Brand</th>
+          <th>AI visibility</th>
+          <th>Organic top 10</th>
+          <th>Opportunities</th>
+          <th>Latest analysis</th>
+          <th>Status</th>
+          <th><span class="sr-only">Open brand</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.brand.id) {
+        <tr>
+          <td>
+            <a class="brand-cell" [routerLink]="['/brands', row.brand.id]"
+              ><span class="brand-avatar"
+                >{{ row.brand.name.charAt(0).toUpperCase() }}</span
+              >
+              <div>
+                <strong>{{ row.brand.name }}</strong
+                ><small>{{ row.brand.domain }}</small
+                ><small>{{ row.brand.competitors.length }} competitors</small>
+              </div></a
+            >
+          </td>
+          <td>
+            <div class="rate-cell">
+              <span class="table-number"
+                >{{ row.brand.latest_run?.headline?.ai_visibility_rate | metric:
+                "percent" }}</span
+              >
+              @if ( row.brand.latest_run?.headline?.ai_visibility_rate != null )
+              {
+              <span class="mini-track" aria-hidden="true"
+                ><i
+                  [style.width.%]="
+                              (row.brand.latest_run?.headline
+                                ?.ai_visibility_rate ?? 0) * 100
+                            "
+                ></i
+              ></span>
+              }
+            </div>
+            <div class="small-note">
+              @if (row.comparison) { {{
+              row.comparison.summary.ai_visibility_rate_delta | metric: "delta"
+              }} vs previous } @else { {{ row.brand.latest_run?.headline ? "No
+              comparable history" : "Not yet measured" }} }
+            </div>
+          </td>
+          <td>
+            <span class="table-number"
+              >{{ row.brand.latest_run?.headline?.organic_top10_rate | metric:
+              "percent" }}</span
+            >
+            <div class="small-note">Measured query coverage</div>
+          </td>
+          <td>
+            <span class="table-number"
+              >{{ row.report ? (row.report.opportunities.length | metric) : "—"
+              }}</span
+            >
+            <div class="small-note">
+              {{ row.report ? "Ranked gaps" : "Report unavailable" }}
+            </div>
+          </td>
+          <td>
+            <span class="nowrap"
+              >{{ row.brand.stats.last_run_at ? (row.brand.stats.last_run_at |
+              date: "MMM d, y") : "Not analyzed" }}</span
+            >
+            <div class="small-note">
+              {{ row.brand.stats.last_run_at | date: "h:mm a" }}
+            </div>
+          </td>
+          <td>
+            @if (row.brand.latest_run) {
+            <app-status [status]="row.brand.latest_run.status" />
+            } @else {
+            <span class="status">Not analyzed</span>
+            }
+          </td>
+          <td>
+            <a
+              class="icon-button"
+              [routerLink]="['/brands', row.brand.id]"
+              [attr.aria-label]="'Open ' + row.brand.name"
+              ><app-icon name="arrow"
+            /></a>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <span
+      >{{ offset() + 1 }}–{{ offset() + rows().length }} of {{ total() }}
+      brands</span
+    >
+    <div>
+      <button
+        class="button secondary small"
+        [disabled]="offset() === 0"
+        (click)="page(-1)"
+      >
+        Previous</button
+      ><button
+        class="button secondary small"
+        [disabled]="offset() + rows().length >= total()"
+        (click)="page(1)"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+  }
+</section>
+<aside class="insight-banner">
+  <div>
+    <span class="eyebrow">DISCOVERY IS CHANGING</span>
+    <h2>Search is a list. AI is a conversation.</h2>
+    <p>
+      Your next customer might ask an AI before they visit a website. Measure
+      both surfaces to see the full picture, then turn the gaps into content
+      worth finding.
+    </p>
+  </div>
+  <div class="insight-symbol"><app-icon name="spark" /></div>
+</aside>
+<p class="small-note">
+  Visibility rates reflect measured queries only. A dash means evidence is
+  unavailable; a measured 0% means no visibility was found.
+</p>

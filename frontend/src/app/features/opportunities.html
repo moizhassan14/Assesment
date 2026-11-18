@@ -1,0 +1,218 @@
+<div class="section-heading" style="margin-top: 0">
+  <div>
+    <h2>Find the gap worth closing.</h2>
+    <p class="section-copy" style="margin-top: 5px">
+      Ranked by the backend from demand, visibility gaps, and competitor
+      pressure.
+    </p>
+  </div>
+</div>
+@if ((store.reportLoading() && !store.report()) || store.reportError()) {
+<app-state
+  [loading]="store.reportLoading()"
+  [error]="store.reportError()"
+  title="opportunities"
+  (retry)="store.refreshReport()"
+/>
+} @else if (store.report(); as report) {
+<app-coverage-notice [report]="report" />
+<div class="filter-line">
+  <div class="search-input">
+    <app-icon name="search" /><input
+      type="search"
+      aria-label="Search opportunities"
+      placeholder="Search a keyword or question…"
+      (input)="search.set(inputValue($event))"
+    />
+  </div>
+  <select
+    aria-label="Filter by confidence"
+    (change)="confidence.set(inputValue($event))"
+  >
+    <option value="all">All confidence levels</option>
+    <option value="high">High confidence</option>
+    <option value="medium">Medium confidence</option>
+    <option value="low">Low confidence</option>
+    <option value="insufficient">Insufficient evidence</option></select
+  ><select
+    aria-label="Filter by evidence coverage"
+    (change)="coverage.set(inputValue($event))"
+  >
+    <option value="all">All evidence</option>
+    <option value="complete">Complete evidence</option>
+    <option value="partial">Partial evidence</option></select
+  ><select
+    aria-label="Sort opportunities"
+    (change)="sort.set(inputValue($event))"
+  >
+    <option value="score">Highest score first</option>
+    <option value="volume">Highest search volume</option>
+    <option value="query">Keyword A–Z</option>
+  </select>
+</div>
+<p class="filter-count">
+  {{ filtered().length }} of {{ report.opportunities.length }} opportunities ·
+  Scores are backend calculations. Unscored results appear last.
+</p>
+@if (!report.opportunities.length) {
+<app-state
+  title="No opportunities available yet"
+  description="Opportunities appear when the pipeline has enough usable evidence. Review the report or pipeline for coverage details."
+  icon="target"
+/>
+} @else if (!filtered().length) {
+<app-state
+  title="No opportunities match these filters"
+  description="Try another keyword, confidence level, or evidence filter."
+  icon="search"
+/>
+} @else {
+<div class="opportunity-list">
+  @for (opportunity of filtered(); track opportunity.id) {
+  <details class="opportunity">
+    <summary>
+      <span class="opportunity-rank"
+        >{{ opportunity.rank !== null ? "#" + opportunity.rank : "—" }}</span
+      >
+      <div class="opportunity-title">
+        <h3>{{ opportunity.query }}</h3>
+        <p>
+          <span>{{ opportunity.confidence | label }} confidence</span
+          ><span>·</span
+          ><span
+            >{{ opportunity.coverage | metric: "percent" }} evidence
+            coverage</span
+          >
+          @if (opportunity.is_partial) {
+          <app-status status="partial_success" />
+          }
+        </p>
+      </div>
+      <div class="opportunity-preview">
+        <div>
+          {{ opportunity.metrics?.search_volume | metric }}<small
+            >SEARCHES / MO</small
+          >
+        </div>
+        <div class="hide-tablet">
+          {{ opportunity.metrics?.paid_competition | number: "1.0-2" }}<small
+            >PAID COMPETITION</small
+          >
+          @if (opportunity.metrics?.paid_competition == null) {
+          <span>—</span>
+          }
+        </div>
+        <span
+          class="score"
+          [attr.aria-label]="
+                      'Opportunity score ' +
+                      (opportunity.score ?? 'unavailable')
+                    "
+          >{{ opportunity.score | metric: "score" }}</span
+        ><app-icon name="chevron" class="expand-chevron" />
+      </div>
+    </summary>
+    <div class="opportunity-body">
+      <p>{{ opportunity.explanation }}</p>
+      <div class="component-grid">
+        @for ( component of components(opportunity); track component.key ) {
+        <article class="component-card">
+          <h4>
+            {{ component.key | label }} @if (!component.value.measured) {
+            <span class="count-chip">UNAVAILABLE</span>
+            }
+          </h4>
+          <p>{{ component.value.explanation }}</p>
+          <small
+            >{{ component.value.measured ? "Measured component" : "Not measured"
+            }} · Backend weight {{ component.value.weight | metric: "percent"
+            }}</small
+          >
+        </article>
+        }
+      </div>
+      <dl class="data-list" style="margin-top: 15px">
+        <div>
+          <dt>Google Ads paid competition</dt>
+          <dd>
+            {{ opportunity.metrics?.paid_competition == null ? "Unavailable" :
+            (opportunity.metrics?.paid_competition | number: "1.0-2") }} {{
+            opportunity.metrics?.paid_competition_level ?? "" }}
+          </dd>
+        </div>
+        <div>
+          <dt>Organic keyword difficulty</dt>
+          <dd>{{ opportunity.metrics?.keyword_difficulty | metric }} / 100</dd>
+        </div>
+        <div>
+          <dt>Metric source / retrieved</dt>
+          <dd>
+            {{ opportunity.metrics?.source ?? "Unavailable" }}<small
+              >{{ opportunity.metrics?.fetched_at | date: "MMM d, y, h:mm a"
+              }}</small
+            >
+          </dd>
+        </div>
+      </dl>
+      <p class="small-note" style="margin: 12px 0">
+        Paid competition describes Google Ads advertiser competition. It is
+        separate from organic keyword difficulty. A dash indicates unavailable
+        data.
+      </p>
+      @if (observations(opportunity.id).length) {
+      <h4 style="font-size: 11px; margin: 20px 0 10px">
+        Supporting measurements
+      </h4>
+      <div class="observation-grid">
+        @for ( observation of observations(opportunity.id); track observation.id
+        ) {
+        <div class="observation">
+          <strong
+            >{{ observation.surface | label }} · {{ observation.status | label
+            }}</strong
+          >
+          <p>
+            {{ observation.status === "failed" ? "Measurement unavailable. Brand
+            visibility is unknown." : observation.status === "skipped" ? "Not
+            measured." : observation.status === "not_present" ? "Google did not
+            show an AI Overview for this query." : (observation.answer_excerpt
+            ?? "Organic rank: " + (observation.brand.rank ?? "not found within
+            fetched depth")) }}
+          </p>
+          @if ( observation.status === "measured" &&
+          observation.competitors.length ) {
+          <p>
+            Competitor context: @for ( competitor of observation.competitors;
+            track competitor.domain ) { {{ competitor.name }} ({{
+            competitor.cited ? "cited" : competitor.mentioned ? "visible" : "not
+            visible" }}){{ $last ? "" : ", " }} }
+          </p>
+          }
+        </div>
+        }
+      </div>
+      }
+      <a
+        class="button text"
+        [routerLink]="['/runs', report.run.id, 'recommendations']"
+        [queryParams]="{ opportunity: opportunity.id }"
+        >See related content actions <app-icon name="arrow"
+      /></a>
+    </div>
+  </details>
+  }
+</div>
+}
+<div class="notice" style="margin-top: 24px">
+  <app-icon name="info" />
+  <div>
+    <strong>Why the largest gaps rank highest</strong>
+    <p>
+      The backend weighs demand, AI visibility gaps, organic gaps, and
+      competitor pressure. Missing components reduce coverage; they are not
+      assigned a zero score. Minimum coverage: {{ report.scoring.min_coverage |
+      metric: "percent" }}. Model: {{ report.scoring.version }}.
+    </p>
+  </div>
+</div>
+}

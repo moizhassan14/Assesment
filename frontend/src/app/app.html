@@ -1,0 +1,94 @@
+<a class="skip-link" href="#main-content">Skip to content</a>
+<aside
+  class="sidebar"
+  [class.is-open]="menuOpen()"
+  aria-label="Main navigation"
+>
+  <a class="wordmark" routerLink="/" aria-label="Signal home"
+    ><span class="brand-mark"><app-icon name="signal" /></span>signal<span
+      class="wordmark-period"
+      >.</span
+    ></a
+  >
+  <div class="workspace-label">YOUR WORKSPACE</div>
+  <nav>
+    <a
+      routerLink="/"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ><app-icon name="grid" /> Brand overview
+      <span class="nav-arrow" aria-hidden="true">↗</span></a
+    ><a routerLink="/brands/new" routerLinkActive="active"
+      ><app-icon name="plus" /> Add a brand</a
+    >
+  </nav>
+  <div class="sidebar-note">
+    <span class="eyebrow">A CLEARER PICTURE</span>
+    <h3>Be part of<br />the answer.</h3>
+    <p>Turn search and AI visibility into your next content move.</p>
+    <div class="signal-art" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <span class="live-dot"></span> Live intelligence
+    <span class="version">v1.0</span>
+  </div>
+</aside>
+@if (menuOpen()) {
+<button
+  class="nav-scrim"
+  aria-label="Close navigation"
+  (click)="menuOpen.set(false)"
+></button>
+}
+<div class="workspace">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button
+        class="icon-button mobile-menu"
+        aria-label="Toggle navigation"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="menuOpen.set(!menuOpen())"
+      >
+        <app-icon name="menu" /></button
+      ><span>Intelligence workspace</span><span class="topbar-divider">/</span
+      ><strong>AI visibility</strong>
+    </div>
+    <div class="topbar-right">
+      <span class="live-pill"><span class="live-dot"></span> LIVE DATA</span
+      ><span class="avatar" aria-label="Workspace">W</span>
+    </div>
+  </header>
+  <main id="main-content" tabindex="-1">
+    @if (diagnostics.runtimeError()) {
+    <div class="notice danger" role="alert">
+      <app-icon name="alert" />
+      <div>
+        <strong>Something interrupted this view.</strong>
+        <p>
+          Reload the page to recover. The issue has been reported when the
+          server is reachable.
+        </p>
+      </div>
+      <button class="button secondary" (click)="reload()">Reload</button>
+    </div>
+    }
+    <router-outlet />
+  </main>
+  <footer class="page-footer">
+    <span>Signal / AI visibility intelligence</span
+    ><span>Evidence first. Better decisions next.</span>
+  </footer>
+</div>
+@if (notices.message()) {
+<div class="toast" role="status">
+  <app-icon name="check" />{{ notices.message() }}<button
+    class="icon-button"
+    aria-label="Dismiss notification"
+    (click)="notices.message.set('')"
+  >
+    <app-icon name="close" />
+  </button>
+</div>
+}

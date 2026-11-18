@@ -1,0 +1,10 @@
+node_modules/
+.npm-cache/
+.qa-data/
+dist/
+.angular/
+out-tsc/
+test-results/
+playwright-report/
+*.log
+.env

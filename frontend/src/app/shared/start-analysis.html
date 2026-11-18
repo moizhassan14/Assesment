@@ -1,0 +1,86 @@
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>A fresh perspective starts here</h2>
+      <p>Research your market or re-check your existing queries.</p>
+    </div>
+    <app-icon name="spark" />
+  </div>
+  <div class="panel-body">
+    @if (activeRunId()) {
+    <div class="notice no-bottom-margin">
+      <app-icon name="clock" />
+      <div>
+        <strong>Your analysis is in progress</strong>
+        <p>You can leave this page. Your run continues on the server.</p>
+        <a
+          class="button text"
+          [routerLink]="['/runs', activeRunId(), 'progress']"
+          >Follow live progress <app-icon name="arrow"
+        /></a>
+      </div>
+    </div>
+    } @else {
+    <form [formGroup]="form" (ngSubmit)="start()" novalidate>
+      <div class="field">
+        <label [for]="'analysis-mode-' + brandId()">Analysis type</label
+        ><select [id]="'analysis-mode-' + brandId()" formControlName="mode">
+          <option value="discover">Discover new opportunities</option>
+          <option value="remeasure" [disabled]="!canRemeasure()">
+            Re-check tracked queries
+          </option></select
+        ><small
+          >Re-check reuses previously measured queries and preserves earlier
+          reports.</small
+        >
+      </div>
+      @if (form.controls.mode.value === "discover") {
+      <div class="field">
+        <label [for]="'question-' + brandId()"
+          >Research question <span>Optional</span></label
+        ><textarea
+          [id]="'question-' + brandId()"
+          formControlName="question"
+          placeholder="What do you want to learn about your brand’s visibility?"
+          [attr.aria-describedby]="'question-help-' + brandId()"
+        ></textarea
+        ><small [id]="'question-help-' + brandId()">
+          @if ( form.controls.question.touched && form.controls.question.invalid
+          ) { Use 10–400 characters, or leave this empty. } @else { Leave empty
+          to research your saved brand and seed keywords. }
+        </small>
+      </div>
+      }
+      <label class="checkbox"
+        ><input type="checkbox" formControlName="force" /><span
+          >Fetch fresh provider data<small
+            >Bypasses recent cached results. May incur additional provider
+            costs.</small
+          ></span
+        ></label
+      >
+      @if (error()) {
+      <div class="notice danger" style="margin-top: 18px" role="alert">
+        <app-icon name="alert" />
+        <div>
+          <strong>{{ message() }}</strong>
+          @if (reference()) {
+          <p class="mono">Reference: {{ reference() }}</p>
+          }
+        </div>
+      </div>
+      }
+      <button
+        class="button primary"
+        type="submit"
+        [disabled]="submitting()"
+        style="margin-top: 21px"
+      >
+        <app-icon [name]="submitting() ? 'clock' : 'spark'" />{{ submitting() ?
+        "Starting analysis…" : form.controls.mode.value === "remeasure" ?
+        "Re-check visibility" : "Start analysis" }}
+      </button>
+    </form>
+    }
+  </div>
+</section>

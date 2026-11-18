@@ -1,0 +1,54 @@
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/">Brand overview</a><app-icon name="chevron" /><span
+    >{{ store.brand()?.name ?? "Brand" }}</span
+  >
+</nav>
+@if (store.loading() || store.error()) {
+<app-state
+  [loading]="store.loading()"
+  [error]="store.error()"
+  title="brand intelligence"
+  (retry)="store.refresh()"
+/>
+} @else if (store.brand(); as brand) {
+<div class="page-heading">
+  <div class="brand-cell">
+    <span class="brand-avatar large"
+      >{{ brand.name.charAt(0).toUpperCase() }}</span
+    >
+    <div>
+      <span class="eyebrow">BRAND INTELLIGENCE</span>
+      <h1>{{ brand.name }}</h1>
+      <p>
+        {{ brand.domain }} <span aria-hidden="true">·</span>
+        {{ brand.market.location_name }} / {{ brand.market.language_name }}
+      </p>
+    </div>
+  </div>
+  <div class="heading-actions">
+    @if (brand.latest_run) {
+    <app-status [status]="brand.latest_run.status" />
+    }
+    <a class="button secondary" [routerLink]="['/brands', brand.id, 'edit']"
+      ><app-icon name="settings" /> Configure</a
+    >
+  </div>
+</div>
+<nav class="tabs" aria-label="Brand sections">
+  <a
+    [routerLink]="['/brands', brand.id]"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    ><app-icon name="grid" /> Overview</a
+  ><a [routerLink]="['/brands', brand.id, 'history']" routerLinkActive="active"
+    ><app-icon name="clock" /> Analysis history
+    <span class="count-chip">{{ brand.stats.run_count }}</span></a
+  >
+  @if (brand.latest_run) {
+  <a [routerLink]="['/runs', brand.latest_run.id, 'overview']"
+    ><app-icon name="chart" /> Latest report <app-icon name="arrow"
+  /></a>
+  }
+</nav>
+<router-outlet />
+}

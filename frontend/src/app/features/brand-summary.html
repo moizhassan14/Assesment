@@ -1,0 +1,194 @@
+@if (store.brand(); as brand) {
+<div class="metric-grid">
+  <app-metric
+    label="AI visibility"
+    [value]="
+            brand.latest_run?.headline?.ai_visibility_rate | metric: 'percent'
+          "
+    hint="ChatGPT mentions / measured queries"
+    icon="spark"
+  /><app-metric
+    label="Organic top 10"
+    [value]="
+            brand.latest_run?.headline?.organic_top10_rate | metric: 'percent'
+          "
+    hint="Google top 10 / measured queries"
+    icon="search"
+  /><app-metric
+    label="Queries measured"
+    [value]="brand.latest_run?.headline?.queries_measured | metric"
+    hint="Latest analysis with evidence"
+    icon="target"
+  /><app-metric
+    label="Content recommendations"
+    [value]="brand.latest_run?.headline?.recommendation_count | metric"
+    hint="Ready to turn into action"
+    icon="file"
+  />
+</div>
+@if (!brand.latest_run) {
+<div class="notice">
+  <app-icon name="spark" />
+  <div>
+    <strong>Your brand is ready for its first look.</strong>
+    <p>
+      Start an analysis to discover where you appear, where competitors lead,
+      and what to publish next.
+    </p>
+  </div>
+</div>
+} @if (brand.latest_run?.status === "partial_success") {
+<div class="notice warning">
+  <app-icon name="alert" />
+  <div>
+    <strong>Your latest report contains partial results.</strong>
+    <p>
+      Some measurements were unavailable. Open the report to see what was
+      measured and what’s missing.
+    </p>
+  </div>
+</div>
+}
+<div class="two-column">
+  <div class="stack">
+    <app-start-analysis
+      [brandId]="brand.id"
+      [canRemeasure]="hasEvidence()"
+      [activeRunId]="activeRunId()"
+    />
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Recent analyses</h2>
+          <p>Every run is saved. Your earlier evidence stays intact.</p>
+        </div>
+        <a class="link" [routerLink]="['/brands', brand.id, 'history']"
+          >View all</a
+        >
+      </div>
+      @if (store.runsError()) {
+      <div class="panel-body">
+        <p class="section-copy">History couldn’t be loaded.</p>
+        <button class="button text" (click)="store.refresh()">Retry</button>
+      </div>
+      } @else if (store.runs().length) {
+      <div
+        class="table-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Recent analyses table. Scroll horizontally for more columns."
+      >
+        <table>
+          <thead>
+            <tr>
+              <th>Started</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th><span class="sr-only">Open analysis</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (run of store.runs().slice(0, 4); track run.id) {
+            <tr>
+              <td>{{ run.created_at | date: "MMM d, h:mm a" }}</td>
+              <td>{{ run.mode === "discover" ? "Discovery" : "Re-check" }}</td>
+              <td><app-status [status]="run.status" /></td>
+              <td>
+                <a
+                  class="icon-button"
+                  [routerLink]="[
+                              '/runs',
+                              run.id,
+                              active(run.status) ? 'progress' : 'overview',
+                            ]"
+                  [attr.aria-label]="
+                              'Open analysis from ' +
+                              (run.created_at | date: 'medium')
+                            "
+                  ><app-icon name="arrow"
+                /></a>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      } @else {
+      <div class="panel-body">
+        <p class="section-copy">
+          No analyses yet. Your first report will appear here.
+        </p>
+      </div>
+      }
+    </section>
+  </div>
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>The research context</h2>
+        <app-icon name="globe" />
+      </div>
+      <div class="panel-body">
+        @if (brand.description) {
+        <p class="section-copy">{{ brand.description }}</p>
+        <hr class="divider" />
+        }
+        <dl class="data-list">
+          <div>
+            <dt>Market</dt>
+            <dd>
+              {{ brand.market.location_name }}<small
+                >{{ brand.market.language_name }}</small
+              >
+            </dd>
+          </div>
+          <div>
+            <dt>Last analyzed</dt>
+            <dd>
+              {{ brand.stats.last_run_at ? (brand.stats.last_run_at | date: "MMM
+              d, y, h:mm a") : "Not yet analyzed" }}
+            </dd>
+          </div>
+          <div>
+            <dt>Profile updated</dt>
+            <dd>{{ brand.updated_at | date: "MMM d, y" }}</dd>
+          </div>
+        </dl>
+        <hr class="divider" />
+        <h3 style="font-size: 11px; margin-bottom: 12px">SEED KEYWORDS</h3>
+        <div class="tag-list">
+          @for (keyword of brand.seed_keywords; track keyword) {
+          <span class="tag">{{ keyword }}</span>
+          }
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-header">
+        <h2>
+          Competitors
+          <span class="count-chip">{{ brand.competitors.length }}</span>
+        </h2>
+        <app-icon name="users" />
+      </div>
+      <div class="panel-body">
+        @if (!brand.competitors.length) {
+        <p class="section-copy">
+          No competitors added yet. Configure your brand to add context.
+        </p>
+        } @for (competitor of brand.competitors; track competitor.id) {
+        <div class="brand-cell" style="margin-bottom: 15px">
+          <span class="brand-avatar"
+            >{{ competitor.name.charAt(0).toUpperCase() }}</span
+          >
+          <div>
+            <strong>{{ competitor.name }}</strong
+            ><small>{{ competitor.domain }}</small>
+          </div>
+        </div>
+        }
+      </div>
+    </section>
+  </div>
+</div>
+}

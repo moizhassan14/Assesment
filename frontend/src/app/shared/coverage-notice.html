@@ -1,0 +1,37 @@
+@if (report(); as data) { @if (!data.is_final) {
+<div class="notice">
+  <app-icon name="clock" />
+  <div>
+    <strong>This report is still taking shape.</strong>
+    <p>
+      Measurements may change as the pipeline finishes. Follow live progress for
+      the current stage.
+    </p>
+  </div>
+</div>
+} @if ( data.run.status === "partial_success" || data.errors.length ||
+failed().length ) {
+<div class="notice warning" role="status">
+  <app-icon name="alert" />
+  <div>
+    <strong>Useful evidence. An incomplete picture.</strong>
+    <p>
+      Available results are preserved. Unavailable measurements are unknown and
+      do not count as zero visibility.
+    </p>
+    <ul>
+      @for (issue of data.errors; track $index) {
+      <li>
+        <strong>{{ issue.node | label }}:</strong>
+        {{ describe(issue) }}
+      </li>
+      } @for (surface of failed(); track surface) {
+      <li>
+        {{ surface | label }} has failed measurements. Check the evidence below
+        before acting.
+      </li>
+      }
+    </ul>
+  </div>
+</div>
+} }

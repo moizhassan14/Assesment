@@ -1,0 +1,127 @@
+<div class="section-heading" style="margin-top: 0">
+  <div>
+    <h2>Make your next move count.</h2>
+    <p class="section-copy" style="margin-top: 5px">
+      Specific content actions, connected to the evidence behind them.
+    </p>
+  </div>
+</div>
+@if ((store.reportLoading() && !store.report()) || store.reportError()) {
+<app-state
+  [loading]="store.reportLoading()"
+  [error]="store.reportError()"
+  title="content recommendations"
+  (retry)="store.refreshReport()"
+/>
+} @else if (store.report(); as report) {
+<app-coverage-notice [report]="report" />
+<div class="filter-line">
+  <div class="search-input">
+    <app-icon name="search" /><input
+      type="search"
+      aria-label="Search content actions"
+      placeholder="Search topic, title, or format…"
+      (input)="search.set(inputValue($event))"
+    />
+  </div>
+  <select
+    aria-label="Filter by priority"
+    (change)="priority.set(inputValue($event))"
+  >
+    <option value="all">All priorities</option>
+    <option value="high">High priority</option>
+    <option value="medium">Medium priority</option>
+    <option value="low">Low priority</option>
+  </select>
+  @if (opportunity()) {
+  <a
+    class="button secondary small"
+    [routerLink]="['/runs', report.run.id, 'recommendations']"
+    >Show all actions <app-icon name="close"
+  /></a>
+  }
+</div>
+<p class="filter-count">
+  {{ filtered().length }} content actions @if (opportunity()) { for the selected
+  opportunity }
+</p>
+@if (!filtered().length) {
+<app-state
+  [title]="
+            report.recommendations.length
+              ? 'No matching content actions'
+              : 'No content actions available yet'
+          "
+  description="Try adjusting filters, or review the opportunity evidence and pipeline coverage."
+  icon="file"
+/>
+} @else {
+<div class="recommendation-grid">
+  @for (item of filtered(); track item.id) {
+  <article class="recommendation-card">
+    <div class="recommendation-card-top">
+      <app-status [status]="item.priority" /><span
+        >{{ item.content_type | label }}</span
+      >
+    </div>
+    <div>
+      <span class="eyebrow">{{ item.query }}</span>
+      <h2 style="margin-top: 8px">{{ item.title }}</h2>
+    </div>
+    <p>{{ item.angle }}</p>
+    <div>
+      <h3 style="font-size: 11px; margin-bottom: 6px">The visibility gap</h3>
+      <p>{{ item.gap_explanation }}</p>
+    </div>
+    <div class="next-step">
+      <strong>YOUR NEXT STEP</strong>
+      <p>{{ item.recommended_action }}</p>
+    </div>
+    <details>
+      <summary>See supporting evidence & limitations</summary>
+      <ul>
+        @for ( observation of item.supporting_observations; track
+        observation.observation_id ) {
+        <li>
+          <strong>{{ observation.surface | label }}:</strong>
+          {{ observation.summary }}
+        </li>
+        } @empty {
+        <li>
+          No specific supporting observation was attached. Review the report’s
+          evidence.
+        </li>
+        }
+      </ul>
+      <p>
+        {{ item.limitations ?? "No additional limitations recorded. AI answers
+        may vary between sessions." }}
+      </p>
+    </details>
+    <div class="recommendation-card-footer">
+      <span>{{ item.generated_by | label }}</span
+      ><button class="button secondary small" (click)="copy(item)">
+        <app-icon [name]="copied() === item.id ? 'check' : 'copy'" />{{ copied()
+        === item.id ? "Brief copied" : "Copy content brief" }}
+      </button>
+    </div>
+  </article>
+  }
+</div>
+} @if (copyFallback()) {
+<section class="panel" style="margin-top: 22px">
+  <div class="panel-body">
+    <div class="field">
+      <label for="brief-fallback"
+        >Clipboard unavailable · select and copy your brief</label
+      ><textarea
+        id="brief-fallback"
+        readonly
+        rows="12"
+        [value]="copyFallback()"
+        (focus)="selectText($event)"
+      ></textarea>
+    </div>
+  </div>
+</section>
+} }

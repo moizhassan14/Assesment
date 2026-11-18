@@ -1,0 +1,246 @@
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/">Brand overview</a><app-icon name="chevron" /><span
+    >{{ editing() ? "Configure brand" : "Add a brand" }}</span
+  >
+</nav>
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SET THE CONTEXT</span>
+    <h1>
+      {{ editing() ? "Keep your brand in focus." : "Make your brand the starting
+      point." }}
+    </h1>
+    <p>A little context. A much clearer picture of your visibility.</p>
+  </div>
+</div>
+@if (loading() || loadError()) {
+<app-state
+  [loading]="loading()"
+  [error]="loadError()"
+  title="brand configuration"
+  (retry)="load()"
+/>
+} @else {
+<div class="form-layout">
+  <form class="panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (submitError()) {
+    <div class="panel-body">
+      <app-state [error]="submitError()" (retry)="submit()" />
+      @if (existingBrand()) {
+      <a class="button primary" [routerLink]="['/brands', existingBrand()]"
+        >Open existing brand</a
+      >
+      }
+    </div>
+    }
+    <section class="form-section">
+      <div class="form-section-heading">
+        <span class="step-number">01</span>
+        <div>
+          <h2>Brand essentials</h2>
+          <p>Tell us who we’re measuring and where you compete.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="brand-name">Brand name</label
+          ><input
+            id="brand-name"
+            formControlName="name"
+            placeholder="Your brand name"
+            autocomplete="organization"
+            aria-describedby="name-error"
+            [attr.aria-invalid]="invalid('name')"
+          /><small id="name-error" class="field-error"
+            >{{ feedback("name") }}</small
+          >
+        </div>
+        <div class="field">
+          <label for="brand-domain">Website or domain</label
+          ><input
+            id="brand-domain"
+            formControlName="domain"
+            placeholder="yourbrand.com"
+            autocomplete="url"
+            [readOnly]="editing()"
+            aria-describedby="domain-error"
+            [attr.aria-invalid]="invalid('domain')"
+          /><small id="domain-error" class="field-error"
+            >{{ feedback("domain") }}</small
+          >
+        </div>
+      </div>
+      <div class="field">
+        <label for="brand-description"
+          >What does your brand do? <span>Optional</span></label
+        ><textarea
+          id="brand-description"
+          formControlName="description"
+          placeholder="Describe your product, audience, and what makes it useful."
+          maxlength="500"
+          aria-describedby="description-error"
+        ></textarea
+        ><small id="description-error" class="field-error"
+          >{{ feedback("description") }}</small
+        >
+      </div>
+      <div class="field">
+        <label for="market">Market & language</label
+        ><select
+          id="market"
+          formControlName="market"
+          aria-describedby="market-help market-error"
+        >
+          @for ( market of config()?.markets; track market.location_code + ":" +
+          market.language_code; let i = $index ) {
+          <option [value]="i">
+            {{ market.location_name }} · {{ market.language_name }}
+          </option>
+          }</select
+        ><small id="market-help"
+          >{{ editing() ? "Domain and market stay fixed to keep historical
+          measurements comparable." : "Measurements use this location and
+          language." }}</small
+        ><small id="market-error" class="field-error"
+          >{{ feedback("market") }}</small
+        >
+      </div>
+    </section>
+    <section class="form-section">
+      <div class="form-section-heading">
+        <span class="step-number">02</span>
+        <div>
+          <h2>Research direction</h2>
+          <p>Start with the topics your customers search for.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="seed-keywords">Seed keywords</label
+        ><textarea
+          id="seed-keywords"
+          formControlName="keywords"
+          placeholder="e.g. project management software, team collaboration"
+          aria-describedby="keywords-help keywords-error"
+          [attr.aria-invalid]="invalid('keywords')"
+        ></textarea
+        ><small id="keywords-help"
+          >1–{{ config()?.limits?.max_seed_keywords }} keywords, separated by
+          commas or new lines. Up to 10 words each.</small
+        ><small id="keywords-error" class="field-error"
+          >{{ feedback("keywords") }}</small
+        >
+      </div>
+      @if (!editing()) {
+      <div class="field">
+        <label for="research-question"
+          >Research question
+          <span>Optional · used when you start an analysis</span></label
+        ><textarea
+          id="research-question"
+          formControlName="question"
+          placeholder="What would you like to learn about your brand’s visibility?"
+          aria-describedby="question-error"
+        ></textarea
+        ><small id="question-error" class="field-error"
+          >{{ feedback("question") }}</small
+        >
+      </div>
+      }
+    </section>
+    <section class="form-section">
+      <div class="form-section-heading">
+        <span class="step-number">03</span>
+        <div>
+          <h2>The competitive landscape</h2>
+          <p>
+            Add up to {{ config()?.limits?.max_competitors }} competitors to put
+            your results in context.
+          </p>
+        </div>
+      </div>
+      <div formArrayName="competitors">
+        @for ( competitor of form.controls.competitors.controls; track
+        competitor; let i = $index ) {
+        <div class="competitor-row" [formGroupName]="i">
+          <div class="field">
+            <label [for]="'competitor-name-' + i"
+              >Competitor {{ i + 1 }} name</label
+            ><input
+              [id]="'competitor-name-' + i"
+              formControlName="name"
+              placeholder="Competitor name"
+              [attr.aria-describedby]="'competitor-name-error-' + i"
+            /><small class="field-error" [id]="'competitor-name-error-' + i"
+              >{{ competitorFeedback(i, "name") }}</small
+            >
+          </div>
+          <div class="field">
+            <label [for]="'competitor-domain-' + i">Domain</label
+            ><input
+              [id]="'competitor-domain-' + i"
+              formControlName="domain"
+              placeholder="competitor.com"
+              [attr.aria-describedby]="'competitor-domain-error-' + i"
+            /><small class="field-error" [id]="'competitor-domain-error-' + i"
+              >{{ competitorFeedback(i, "domain") }}</small
+            >
+          </div>
+          <button
+            class="icon-button"
+            type="button"
+            [attr.aria-label]="'Remove competitor ' + (i + 1)"
+            (click)="removeCompetitor(i)"
+          >
+            <app-icon name="close" />
+          </button>
+        </div>
+        }
+      </div>
+      <button
+        type="button"
+        class="button secondary small"
+        (click)="addCompetitor()"
+        [disabled]="
+                form.controls.competitors.length >=
+                (config()?.limits?.max_competitors ?? 0)
+              "
+      >
+        <app-icon name="plus" /> Add competitor
+      </button>
+      @if (competitorError()) {
+      <p class="field-error" role="alert">{{ competitorError() }}</p>
+      }
+    </section>
+    <div class="form-actions">
+      <a
+        class="button text"
+        [routerLink]="editing() ? ['/brands', brandId] : ['/']"
+        >Cancel</a
+      ><button type="submit" class="button primary" [disabled]="submitting()">
+        {{ submitting() ? "Saving brand…" : editing() ? "Save changes" : "Create
+        brand" }}<app-icon [name]="submitting() ? 'clock' : 'arrow'" />
+      </button>
+    </div>
+  </form>
+  <aside class="form-aside">
+    <app-icon name="target" />
+    <h3>Good context.<br />Better intelligence.</h3>
+    <p>
+      Your brand profile guides a live research pipeline. Here’s what happens
+      next.
+    </p>
+    <ol>
+      <li>We discover relevant questions in your market.</li>
+      <li>
+        We check AI answers and organic search for you and your competitors.
+      </li>
+      <li>You get ranked gaps and specific content ideas.</li>
+    </ol>
+    <hr class="divider" />
+    <p>
+      Every metric comes from evidence. When a source is unavailable, we’ll tell
+      you.
+    </p>
+  </aside>
+</div>
+}
