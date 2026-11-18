@@ -23,6 +23,10 @@
       <span aria-hidden="true">·</span>
       {{ run.mode === "discover" ? "Discovery analysis" : "Tracked-query
       re-check" }}
+      @if (run.data_mode === "sandbox") {
+      <span aria-hidden="true">·</span>
+      <span class="sandbox-tag" title="Synthetic data — not live measurements">SANDBOX DATA</span>
+      }
     </p>
   </div>
   <div class="heading-actions">

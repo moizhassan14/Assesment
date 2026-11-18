@@ -31,8 +31,14 @@
     </div>
   </div>
   <div class="sidebar-footer">
-    <span class="live-dot"></span> Live intelligence
+    <span class="live-dot"></span> {{ sandbox() ? "Sandbox data" : "Live intelligence" }}
+    @if (quota(); as q) {
+    <span class="version" title="AI calls remaining (server-enforced)"
+      >AI {{ q.remaining }}/{{ q.limit }}</span
+    >
+    } @else {
     <span class="version">v1.0</span>
+    }
   </div>
 </aside>
 @if (menuOpen()) {
@@ -56,11 +62,41 @@
       ><strong>AI visibility</strong>
     </div>
     <div class="topbar-right">
-      <span class="live-pill"><span class="live-dot"></span> LIVE DATA</span
-      ><span class="avatar" aria-label="Workspace">W</span>
+      @if (sandbox()) {
+      <span class="live-pill sandbox-pill" title="Synthetic DataForSEO-shaped data"
+        ><span class="live-dot"></span> SANDBOX DATA</span
+      >
+      } @else if (config()) {
+      <span class="live-pill"><span class="live-dot"></span> LIVE DATA</span>
+      }<span class="avatar" aria-label="Workspace">W</span>
     </div>
   </header>
   <main id="main-content" tabindex="-1">
+    @if (sandbox()) {
+    <div class="notice warning sandbox-banner" role="note">
+      <app-icon name="alert" />
+      <div>
+        <strong>Sandbox data, not live measurements.</strong>
+        <p>
+          This server runs in sandbox mode: search and AI-answer data is synthetic
+          (in DataForSEO's response format) and labelled [SANDBOX]. Use it to
+          explore the product, not to make decisions.
+        </p>
+      </div>
+    </div>
+    }
+    @if (quota(); as q) { @if (q.remaining === 0) {
+    <div class="notice warning" role="note">
+      <app-icon name="alert" />
+      <div>
+        <strong>AI call quota used ({{ q.used }} of {{ q.limit }}).</strong>
+        <p>
+          New analyses still measure visibility, but query planning and content
+          recommendations fall back to clearly labelled rule-based output.
+        </p>
+      </div>
+    </div>
+    } }
     @if (diagnostics.runtimeError()) {
     <div class="notice danger" role="alert">
       <app-icon name="alert" />

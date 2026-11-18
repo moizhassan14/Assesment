@@ -87,6 +87,7 @@ export interface RunSummary {
   brand_id: string;
   status: RunStatus;
   mode: RunMode;
+  data_mode?: DataMode;
   question: string;
   progress: Progress;
   created_at: string;
@@ -346,7 +347,15 @@ export interface PublicConfig {
   };
   content_types: ContentType[];
   scoring: Scoring;
-  data_mode: "live";
+  data_mode: DataMode;
+  llm_quota?: LlmQuota | null;
+}
+export type DataMode = "live" | "sandbox";
+export interface LlmQuota {
+  used: number;
+  limit: number;
+  remaining: number;
+  per_run_limit: number;
 }
 export interface Health {
   status: string;

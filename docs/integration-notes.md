@@ -26,7 +26,9 @@ Read-only audit on 2026-11-18 found **no high-severity mismatches** (paths, meth
 9. Client error reports: send `kind: "unhandled_rejection"` where applicable and include `user_agent` and a truncated `stack` (both accepted by `POST /api/client-errors`).
 10. `GET /api/runs/{id}/events` (node-by-node trace) is available for a "what happened" timeline on failed/partial runs.
 
-## Contract v1.2 additions the UI should surface (recommended, high value for honesty)
+## Contract v1.2 additions the UI should surface
+
+**Done (2026-11-18):** items 11 and 12 are implemented: a global sandbox banner, a data-mode pill in the top bar, a per-run `SANDBOX DATA` tag, an AI-quota notice and the remaining-calls counter in the sidebar.
 
 11. **Sandbox banner (important):** `run.data_mode`, `report.data_mode`, `GET /api/config → data_mode` and `GET /api/health → checks.data_mode` are `"live"` or `"sandbox"`. When `"sandbox"`, show a persistent, prominent banner on run/report pages: *"Sandbox data — synthetic DataForSEO-shaped data, not live measurements."* (Sandbox summaries already start with `[SANDBOX DATA]`, and synthetic answer excerpts start with `[SANDBOX]`.) The persisted demo run `1febfbde-a4e8-4a46-a36e-418f8e127250` is a sandbox run.
 12. **LLM quota:** `GET /api/config → llm_quota {used, limit, remaining, per_run_limit}`. When `remaining = 0`, tell the user before they start a run that AI planning/recommendations will use labelled rule-based fallbacks. Add a label for run-error code `llm_quota_exhausted`.

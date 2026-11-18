@@ -29,8 +29,9 @@ A full-stack product that measures how visible a brand is in **AI answers** (Cha
 11. [Data model](#data-model)
 12. [Tests](#tests)
 13. [Verification log](#verification-log)
-14. [Trade-offs, limitations and next steps](#trade-offs-known-limitations-and-next-steps)
-15. [AI assistant usage](#ai-assistant-usage)
+14. [Screenshots](#screenshots)
+15. [Trade-offs, limitations and next steps](#trade-offs-known-limitations-and-next-steps)
+16. [AI assistant usage](#ai-assistant-usage)
 
 ---
 
@@ -415,6 +416,7 @@ What was actually executed on 2026-11-18, as opposed to what is only claimed:
 | Check | Result |
 |---|---|
 | Backend tests | ✅ **63 passed** (Docker, Python 3.12.16), all providers faked. |
+| Frontend tests and build | ✅ **24 passed** (`npm test`, Vitest) and a clean `npm run build`. The sandbox banner and AI-quota status were verified in the screenshots below. |
 | `docker compose up --build` (both services, health checks) | ✅ backend `healthy`, frontend started. nginx `/api` proxy, SPA deep-link fallback, `/healthz`, the error envelope and `X-Request-ID` verified with curl through `:8080`. |
 | DataForSEO credentials | ✅ valid. Free `GET /v3/appendix/user_data` shows a $1.00 balance. |
 | **Live DataForSEO data** | ❌ **Blocked by the provider.** Every endpoint returns `40104 "Please verify your account before using the API"`, including free endpoints and `sandbox.dataforseo.com`. Verification requires a phone number (unavailable in the account holder's country) or a $5 top-up, which was not authorised. **$0 was spent.** |
@@ -424,7 +426,7 @@ What was actually executed on 2026-11-18, as opposed to what is only claimed:
 | History and comparison | ✅ `GET /api/brands/{id}/runs` lists all 3 runs with `data_mode`. `GET /api/brands/{id}/compare` diffs the two sandbox runs; live and sandbox runs are never compared. |
 | Safe error paths (deployed stack, $0) | ✅ An invalid brand returns `422` with per-field details. A run with the LLM quota exhausted (`9d4dda67…`, brand Linear) ended `partial_success` with `llm_quota_exhausted`; recommendations are labelled `rule_based_fallback`, the audit shows 2 × `blocked_quota`, and **0 OpenAI requests** were made. |
 
-Persisted results from the authorised run are reused for UI review and screenshots. *Screenshots: pending (to be captured from the running stack at http://localhost:8080; the run pages show the sandbox label).*
+Persisted results from the authorised run are reused for UI review and the [screenshots](#screenshots) (captured read-only: no analyses started, 0 API calls).
 
 Excerpt from that run's trace (`GET /api/runs/1febfbde…/events`):
 
@@ -440,6 +442,18 @@ Excerpt from that run's trace (`GET /api/runs/1febfbde…/events`):
 ```
 
 **To verify live DataForSEO data later** (once an account is verified): put its credentials in `backend/.env`, keep `DATAFORSEO_MODE=live`, raise `OPENAI_MAX_CALLS_TOTAL` by 2, run `docker compose up --build`, and start one analysis from the UI. That costs about $0.06–0.10 on DataForSEO plus about $0.002 on OpenAI.
+
+---
+
+## Screenshots
+
+Captured from the running stack on 2026-11-18 using the persisted, authorised run (`1febfbde…`): **sandbox data** (labelled in the UI), real OpenAI planning and recommendations.
+
+| | |
+|---|---|
+| ![Brand overview](docs/screenshots/01-overview.png) Brand overview, with the sandbox banner and the AI quota status | ![Pipeline](docs/screenshots/02-run-pipeline.png) Live pipeline: every DAG node with status, timing and messages |
+| ![Visibility overview](docs/screenshots/03-visibility-overview.png) Visibility overview and share of voice | ![Opportunities](docs/screenshots/04-opportunities.png) Ranked opportunities with scores, coverage and confidence |
+| ![Recommendations](docs/screenshots/05-recommendations.png) Content actions grounded in evidence (LLM-generated, validated) | ![History](docs/screenshots/06-history-compare.png) Run history and comparison |
 
 ---
 

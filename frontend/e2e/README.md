@@ -27,7 +27,7 @@ This opens existing reports, checks all seven data views at four screen widths, 
 
 ## Separately authorized lifecycle verification
 
-**Disabled for routine assessment development and UI verification.** The OpenAI key belongs to someone else; the user's instruction is to minimize usage and use persisted results. Do not run this section unless the user separately authorizes analysis creation. The backend owns provider integration and strict usage limits.
+**Disabled for routine assessment development and UI verification.** Paid API usage is restricted to a small authorised budget; the instruction is to minimize usage and use persisted results. Do not run this section unless the user separately authorizes analysis creation. The backend owns provider integration and strict usage limits.
 
 Start the full stack using the root README. Then, in PowerShell:
 

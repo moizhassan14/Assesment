@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, signal } from "@angular/core";
+import { Component, HostListener, computed, inject, signal } from "@angular/core";
 import {
   Router,
   RouterLink,
@@ -6,8 +6,9 @@ import {
   RouterOutlet,
   NavigationEnd,
 } from "@angular/router";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { filter } from "rxjs";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
+import { catchError, filter, of } from "rxjs";
+import { Api } from "./core/api";
 import { Diagnostics } from "./core/errors";
 import { Icon, Notices } from "./shared/ui";
 @Component({
@@ -19,6 +20,10 @@ export class App {
   readonly menuOpen = signal(false);
   readonly notices = inject(Notices);
   readonly diagnostics = inject(Diagnostics);
+  /** Server-declared data mode and LLM quota (public config, cached; never triggers an LLM call). */
+  readonly config = toSignal(inject(Api).config().pipe(catchError(() => of(null))), { initialValue: null });
+  readonly sandbox = computed(() => this.config()?.data_mode === "sandbox");
+  readonly quota = computed(() => this.config()?.llm_quota ?? null);
   constructor() {
     inject(Router)
       .events.pipe(

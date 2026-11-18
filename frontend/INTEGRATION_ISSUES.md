@@ -20,7 +20,7 @@ Frontend uses `docs/api-contract.md` as the API authority. Backend, root Compose
 
 ## Live-provider blocker
 
-**User constraints added during implementation:** The OpenAI key belongs to another person; no real OpenAI requests or automatic analysis creation are allowed during ongoing Angular development/builds/tests/UI verification. The user also reports that DataForSEO requires a $5 top-up they cannot fund and that phone verification is unavailable in their country despite email verification. Do not make more paid provider calls or ask for a payment to finish frontend work. Use saved reports and isolated test fixtures. The backend owns provider integration and usage governance.
+**Usage constraints added during implementation:** paid API usage is restricted to a small authorised budget; no real OpenAI requests or automatic analysis creation are allowed during ongoing Angular development/builds/tests/UI verification. The user also reports that DataForSEO requires a $5 top-up they cannot fund and that phone verification is unavailable in their country despite email verification. Do not make more paid provider calls or ask for a payment to finish frontend work. Use saved reports and isolated test fixtures. The backend owns provider integration and usage governance.
 
 At 14:43–14:48 Asia/Karachi on November 18, real DataForSEO POSTs returned **HTTP 403 / provider code 40104**: “Please verify your account before using the API.” A non-billable account GET returned 200/20000. This confirms configured authentication alone is insufficient; account verification at `https://app.dataforseo.com/` is required before live measurements can be verified. No credentials were printed or copied into frontend files.
 

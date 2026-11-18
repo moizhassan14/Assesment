@@ -6,7 +6,7 @@ Reviewed November 18, 2026 (Asia/Karachi). Assessment source: all paragraphs and
 
 **Frontend implemented and integrated with Flask. End-to-end live measurement remains blocked by the DataForSEO account.** This is not a claim that the required live-data submission is ready. The frontend displays unavailable evidence honestly and can read persisted reports without making provider calls.
 
-The user subsequently instructed that the OpenAI key belongs to another person, no real OpenAI calls or automatic analyses may be triggered during frontend development/verification, and DataForSEO funding is unavailable. All subsequent verification uses saved reports, isolated browser fixtures, mocked HTTP unit tests, or backend tests with networking disabled. OpenAI integration and strict usage limits are owned by the backend. No provider credentials were written to frontend source.
+Paid API usage was then restricted to a small, explicitly authorised budget: no real OpenAI calls or automatic analyses may be triggered during frontend development/verification, and DataForSEO funding is unavailable. All subsequent verification uses saved reports, isolated browser fixtures, mocked HTTP unit tests, or backend tests with networking disabled. OpenAI integration and strict usage limits are owned by the backend. No provider credentials were written to frontend source.
 
 ## Executed verification
 
